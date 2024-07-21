@@ -3,10 +3,14 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"sync"
 )
 
 func main() {
-	receiveOrders()
+	var wg sync.WaitGroup
+	wg.Add(1)
+	receiveOrders(&wg)
+	wg.Wait()
 	for _, order := range orders {
 		fmt.Println(order)
 	}
@@ -19,7 +23,8 @@ var rawOrders = []string{
 	`{"productCode": "4444", "quantity": 8, "status": 1}`,
 }
 
-func receiveOrders() {
+func receiveOrders(wg *sync.WaitGroup) {
+	defer wg.Done()
 	for _, rawOrder := range rawOrders {
 		// Decode the JSON string into an order struct
 		// using the json.Unmarshal function
