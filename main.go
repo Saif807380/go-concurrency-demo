@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 )
 
 func main() {
@@ -27,7 +26,7 @@ func receiveOrders() {
 		var newOrder order
 		err := json.Unmarshal([]byte(rawOrder), &newOrder)
 		if err != nil {
-			log.Print(err)
+			fmt.Println(err)
 			continue
 		}
 		orders = append(orders, newOrder)
