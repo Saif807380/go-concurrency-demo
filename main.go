@@ -24,20 +24,29 @@ func main() {
 	go receiveOrders(receivedOrdersCh)
 	go validateOrders(receivedOrdersCh, validOrderCh, invalidOrderCh)
 
-	wg.Add(2)
-	go func() {
-		for order := range validOrderCh {
-			fmt.Printf("Valid Order received: %v\n", order)
-			orders = append(orders, order)
+	wg.Add(1)
+	go func(validOrderCh <-chan order, invalidOrderCh <-chan invalidOrder) {
+	loop:
+		for {
+			select {
+			case order, ok := <-validOrderCh:
+				if ok {
+					fmt.Printf("Valid Order received: %v\n", order)
+					orders = append(orders, order)
+				} else {
+					break loop
+				}
+			case invalidOrder, ok := <-invalidOrderCh:
+				if ok {
+					fmt.Printf("Invalid Order received: %v\n", invalidOrder)
+				} else {
+					break loop
+				}
+			}
+
 		}
 		wg.Done()
-	}()
-	go func() {
-		for invalidOrder := range invalidOrderCh {
-			fmt.Printf("Invalid Order received: %v\n", invalidOrder)
-		}
-		wg.Done()
-	}()
+	}(validOrderCh, invalidOrderCh)
 
 	wg.Wait()
 	fmt.Println("Printing valid received orders")
@@ -53,7 +62,7 @@ var rawOrders = []string{
 	`{"productCode": "4444", "quantity": 8, "status": 1}`,
 }
 
-func validateOrders(in chan order, out chan order, errCh chan invalidOrder) {
+func validateOrders(in <-chan order, out chan<- order, errCh chan<- invalidOrder) {
 	for order := range in {
 		if order.Quantity < 0 {
 			errCh <- invalidOrder{order, fmt.Errorf("quantity is less than 0")}
@@ -65,7 +74,7 @@ func validateOrders(in chan order, out chan order, errCh chan invalidOrder) {
 	close(errCh)
 }
 
-func receiveOrders(out chan order) {
+func receiveOrders(out chan<- order) {
 	for _, rawOrder := range rawOrders {
 		// Decode the JSON string into an order struct
 		// using the json.Unmarshal function
