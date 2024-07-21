@@ -9,7 +9,7 @@ import (
 func main() {
 	var wg sync.WaitGroup
 	wg.Add(1)
-	receiveOrders(&wg)
+	go receiveOrders(&wg)
 	wg.Wait()
 	for _, order := range orders {
 		fmt.Println(order)
